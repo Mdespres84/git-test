@@ -1,6 +1,379 @@
 <!DOCTYPE html>
-<html>
-    <body>
-        <h1>This is a Header</h1>
-    </body>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Supplement Schedule</title>
+</head>
+<body>
+<div id="app">
+<style>
+  #app {
+    --ink: #1B2A27;
+    --muted: #61726E;
+    --paper: #EDF0EC;
+    --card: #FFFFFF;
+    --line: #D7DDD7;
+    --dawn: #B9741F;
+    --mid: #3B7A4E;
+    --eve: #2C5F80;
+    --night: #3C3A6B;
+    --alert: #A03226;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding: 0 0 48px;
+    margin: 0;
+  }
+  #app * { box-sizing: border-box; }
+  #app .wrap { max-width: 620px; margin: 0 auto; padding: 0 18px; }
+
+  #app h1, #app h2, #app h3 {
+    font-family: Charter, "Bitstream Charter", "Iowan Old Style", "Sitka Text", Georgia, serif;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  /* --- masthead --- */
+  #app .top { padding: 34px 0 22px; }
+  #app h1 { font-size: 30px; line-height: 1.15; }
+  #app .sub { color: var(--muted); font-size: 15px; margin-top: 8px; max-width: 46ch; }
+  #app .counter {
+    margin-top: 18px; display: flex; align-items: baseline; gap: 10px;
+    border-top: 1px solid var(--line); padding-top: 14px;
+  }
+  #app .counter b {
+    font-family: Charter, "Iowan Old Style", Georgia, serif;
+    font-size: 34px; font-weight: 600; line-height: 1;
+  }
+  #app .counter span { color: var(--muted); font-size: 14px; }
+  #app .reset {
+    margin-left: auto; background: none; border: 1px solid var(--line);
+    color: var(--muted); font: inherit; font-size: 13px;
+    padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  }
+  #app .reset:hover { border-color: var(--muted); color: var(--ink); }
+  #app .reset:focus-visible { outline: 2px solid var(--eve); outline-offset: 2px; }
+
+  /* --- timeline --- */
+  #app .block { position: relative; padding-left: 26px; padding-bottom: 26px; }
+  #app .block::before {
+    content: ""; position: absolute; left: 5px; top: 12px; bottom: -6px;
+    width: 2px; background: var(--line);
+  }
+  #app .block:last-of-type::before { display: none; }
+  #app .block::after {
+    content: ""; position: absolute; left: 0; top: 7px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--accent, var(--muted));
+  }
+  #app .b-dawn { --accent: var(--dawn); }
+  #app .b-mid  { --accent: var(--mid); }
+  #app .b-eve  { --accent: var(--eve); }
+  #app .b-night{ --accent: var(--night); }
+
+  #app .b-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  #app .b-head h2 { font-size: 20px; color: var(--accent); }
+  #app .b-when { font-size: 14px; color: var(--muted); }
+  #app .b-note {
+    font-size: 13.5px; color: var(--muted); margin: 4px 0 12px; max-width: 44ch;
+  }
+
+  /* --- rows --- */
+  #app .row {
+    display: flex; gap: 12px; width: 100%; text-align: left;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 10px; padding: 12px 13px; margin-bottom: 7px;
+    font: inherit; color: inherit; cursor: pointer;
+    align-items: flex-start;
+  }
+  #app .row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #app .box {
+    flex: 0 0 20px; height: 20px; margin-top: 1px;
+    border: 1.5px solid var(--line); border-radius: 5px;
+    display: grid; place-items: center;
+  }
+  #app .box svg { width: 12px; height: 12px; opacity: 0; }
+  #app .row[aria-pressed="true"] { background: #F7F9F6; border-color: var(--accent); }
+  #app .row[aria-pressed="true"] .box { background: var(--accent); border-color: var(--accent); }
+  #app .row[aria-pressed="true"] .box svg { opacity: 1; }
+  #app .row[aria-pressed="true"] .name { text-decoration: line-through; color: var(--muted); }
+  #app .name { font-weight: 600; font-size: 15.5px; }
+  #app .dose { font-weight: 400; color: var(--muted); }
+  #app .why { font-size: 13px; color: var(--muted); margin-top: 3px; max-width: 42ch; }
+
+  #app .row.hold { border-style: dashed; cursor: default; background: transparent; }
+  #app .row.hold .box { visibility: hidden; }
+  #app .row.hold .name { color: var(--alert); }
+
+  /* --- creatine --- */
+  #app .creatine {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 20px 18px; margin: 8px 0 30px;
+  }
+  #app .creatine h2 { font-size: 21px; }
+  #app .creatine > p { font-size: 14.5px; color: var(--muted); margin: 8px 0 0; }
+  #app .tier {
+    border-top: 1px solid var(--line); padding-top: 14px; margin-top: 16px;
+  }
+  #app .tier h3 { font-size: 16.5px; }
+  #app .tier .amt {
+    font-family: Charter, "Iowan Old Style", Georgia, serif;
+    font-size: 26px; font-weight: 600; color: var(--mid); line-height: 1.1;
+  }
+  #app .tier p { font-size: 14px; color: var(--muted); margin: 5px 0 0; max-width: 44ch; }
+  #app .pick {
+    display: inline-block; font-size: 12px; font-weight: 600; color: var(--mid);
+    border: 1px solid var(--mid); border-radius: 999px; padding: 2px 9px; margin-left: 8px;
+    vertical-align: 3px;
+  }
+  #app .evidence {
+    background: #F3F6F2; border-radius: 9px; padding: 13px 14px; margin-top: 18px;
+    font-size: 13.5px; color: var(--muted);
+  }
+  #app .evidence strong { color: var(--ink); font-weight: 600; }
+
+  /* --- cautions --- */
+  #app .caution {
+    border: 1px solid var(--alert); border-radius: 12px;
+    padding: 18px; margin-bottom: 26px; background: #FDF7F6;
+  }
+  #app .caution h2 { font-size: 19px; color: var(--alert); }
+  #app .caution ul { margin: 12px 0 0; padding-left: 18px; }
+  #app .caution li { font-size: 14px; margin-bottom: 9px; }
+  #app .caution li strong { font-weight: 600; }
+
+  #app .plain { margin-bottom: 26px; }
+  #app .plain h2 { font-size: 19px; margin-bottom: 10px; }
+  #app .plain ul { margin: 0; padding-left: 18px; }
+  #app .plain li { font-size: 14.5px; color: var(--muted); margin-bottom: 8px; }
+  #app .plain li strong { color: var(--ink); font-weight: 600; }
+
+  #app footer {
+    border-top: 1px solid var(--line); padding-top: 16px;
+    font-size: 13px; color: var(--muted); max-width: 48ch;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    #app .box, #app .row { transition: background-color .12s ease, border-color .12s ease; }
+  }
+</style>
+
+<div class="wrap">
+
+  <div class="top">
+    <h1>Daily supplement schedule</h1>
+    <p class="sub">Fifteen things, four times a day. Grouped so the fat-soluble ones land with food and nothing competes with anything else.</p>
+    <div class="counter">
+      <b id="done">0</b><span>of <span id="total">0</span> taken today</span>
+      <button class="reset" id="reset">Start over</button>
+    </div>
+  </div>
+
+  <!-- MORNING -->
+  <section class="block b-dawn">
+    <div class="b-head"><h2>Morning</h2><span class="b-when">With breakfast</span></div>
+    <p class="b-note">These four need fat to absorb, so eat something real — eggs, yogurt, avocado — not just coffee.</p>
+
+    <button class="row" aria-pressed="false">
+      <span class="box"><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span><span class="name">Vitamin B Complex <span class="dose">— 1 capsule</span></span>
+      <span class="why">B vitamins are mildly stimulating. Morning only, or they'll cost you sleep.</span></span>
+    </button>
+
+    <button class="row" aria-pressed="false">
+      <span class="box"><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span><span class="name">L-Methylfolate 5-MTHF <span class="dose">— 1 dropper (1 mg)</span></span>
+      <span class="why">Your B complex already has folate and B12. If you're taking this for MTHFR, that's fine — just know they stack.</span></span>
+    </button>
+
+    <button class="row" aria-pressed="false">
+      <span class="box"><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span><span class="name">Vitamin K2 + D3 <span class="dose">— 1 capsule</span></span>
+      <span class="why">Fat-soluble. K2 directs calcium to bone instead of arteries, which is why they're paired.</span></span>
+    </button>
+
+    <button class="row" aria-pressed="false">
+      <span class="box"><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span><span class="name">Ubiquinol (CoQ10) <span class="dose">— 1 softgel, 100 mg</span></span>
+      <span class="why">Also fat-soluble, and can be energizing. Never at night.</span></span>
+    </button>
+
+    <button class="row" aria-pressed="false">
+      <span class="box"><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span><span class="name">Sea Moss <span class="dose">— 2 capsules (2,000 mg)</span></span>
+      <span class="why">High in iodine — see the note below on thyroid.</span></span>
+    </button>
+
+    <button class="row" aria-pressed="false">
+      <span class="box"><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span><span class="name">Creatine <span class="dose">— first dose (see below)</span></span>
+      <span class="why">Mix into water, juice, or coffee. Dissolves better in warm liquid.</span></span>
+    </button>
+
+    <div class="row hold">
+      <span class="box"></span>
+      <span><span class="name">Methylene Blue — not scheduled</span>
+      <span class="why">See the cautions below. This one needs a doctor's sign-off before it goes into a daily routine.</span></span>
+    </div>
+  </section>
+
+  <!-- LUNCH -->
+  <section class="block b-mid">
+    <div class="b-head"><h2>Lunch</h2><span class="b-when">With the meal</span></div>
+    <p class="b-note">Berberine works on the glucose spike from the meal it's taken with, so timing matters here more than anywhere else.</p>
+
+    <button class="row" aria-pressed="false">
+      <span class="box"><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span><span class="name">Berberine <span class="dose">— 1 softgel</span></span>
+      <span class="why">Take it right before or with your first bite. On an empty stomach it just causes cramping.</span></span>
+    </button>
+
+    <button class="row" aria-pressed="false">
+      <span class="box"><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span><span class="name">Omega-3 Fish Oil <span class="dose">— 1 softgel</span></span>
+      <span class="why">Enteric-coated, so no fish burps. Food improves absorption regardless.</span></span>
+    </button>
+
+    <button class="row" aria-pressed="false">
+      <span class="box"><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span><span class="name">Milk Thistle <span class="dose">— 1 capsule (300 mg)</span></span>
+      <span class="why">Silymarin absorbs better with a meal.</span></span>
+    </button>
+  </section>
+
+  <!-- DINNER -->
+  <section class="block b-eve">
+    <div class="b-head"><h2>Dinner</h2><span class="b-when">With the meal</span></div>
+    <p class="b-note">A near-copy of lunch. Splitting berberine and fish oil across two meals keeps blood levels steadier and is easier on your stomach.</p>
+
+    <button class="row" aria-pressed="false">
+      <span class="box"><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span><span class="name">Berberine <span class="dose">— 1 softgel</span></span>
+      <span class="why">Second and last dose of the day.</span></span>
+    </button>
+
+    <button class="row" aria-pressed="false">
+      <span class="box"><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span><span class="name">Omega-3 Fish Oil <span class="dose">— 1 softgel</span></span>
+      <span class="why">Brings you to roughly 1,000 mg EPA and 500 mg DHA for the day.</span></span>
+    </button>
+
+    <button class="row" aria-pressed="false">
+      <span class="box"><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span><span class="name">10-Strain Probiotic <span class="dose">— 1 capsule</span></span>
+      <span class="why">Same time every day matters more than which time.</span></span>
+    </button>
+
+    <button class="row" aria-pressed="false">
+      <span class="box"><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span><span class="name">Creatine <span class="dose">— second dose (see below)</span></span>
+      <span class="why">Skip this one if you're on the 5 g single-dose plan.</span></span>
+    </button>
+  </section>
+
+  <!-- BEDTIME -->
+  <section class="block b-night">
+    <div class="b-head"><h2>Bedtime</h2><span class="b-when">2+ hours after dinner</span></div>
+    <p class="b-note">Nattokinase works best on an empty stomach, and magnesium glycinate is sedating. They pair well at the end of the night.</p>
+
+    <button class="row" aria-pressed="false">
+      <span class="box"><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span><span class="name">Nattokinase <span class="dose">— 1 capsule (2,000 FU)</span></span>
+      <span class="why">Empty stomach. Wait at least two hours after eating.</span></span>
+    </button>
+
+    <button class="row" aria-pressed="false">
+      <span class="box"><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span><span class="name">Magnesium Glycinate <span class="dose">— 2 tablets (200 mg)</span></span>
+      <span class="why">30 to 60 minutes before sleep. Loose stools mean cut back to one tablet.</span></span>
+    </button>
+  </section>
+
+  <!-- CREATINE -->
+  <div class="creatine">
+    <h2>Creatine: how much</h2>
+    <p>Pick one lane and stay in it for at least eight weeks. All three use plain creatine monohydrate — no need for the expensive forms.</p>
+
+    <div class="tier">
+      <h3>General brain and muscle upkeep</h3>
+      <div class="amt">5 g once daily</div>
+      <p>The standard dose. Saturates muscle reliably, but only nudges brain creatine. Good if you're taking it as background insurance.</p>
+    </div>
+
+    <div class="tier">
+      <h3>Cognitive focus, moderate<span class="pick">Good starting point</span></h3>
+      <div class="amt">5 g twice daily</div>
+      <p>10 g a day, split morning and dinner. The brain takes up creatine slowly and needs more than muscle does, so higher totals are what move brain levels. Easier on the gut than 20 g.</p>
+    </div>
+
+    <div class="tier">
+      <h3>Matching the Alzheimer's trial</h3>
+      <div class="amt">10 g twice daily</div>
+      <p>20 g a day, exactly as the study ran it. This is a large dose — build up over two weeks rather than starting here, and drink noticeably more water.</p>
+    </div>
+
+    <div class="evidence">
+      <strong>What the research actually showed.</strong> The CABA pilot at the University of Kansas gave 20 g of creatine monohydrate daily for eight weeks, split into two 10 g doses, to about twenty people with Alzheimer's. Brain creatine rose 11%, and cognitive scores improved. But this was a single-arm pilot with no placebo group, run for two months. It shows the dose is tolerable and reaches the brain — it does not prove creatine treats or prevents dementia. Larger controlled trials are still pending.
+    </div>
+  </div>
+
+  <!-- CAUTIONS -->
+  <div class="caution">
+    <h2>Read before you start</h2>
+    <p style="font-size:14px;color:var(--muted);margin:8px 0 0;">No prescriptions in the picture, so the drug-interaction problems mostly drop away. These five still apply.</p>
+    <ul>
+      <li><strong>Methylene blue is not on the schedule on purpose.</strong> Your bottle is a bacteriostatic solution labeled for research use — it isn't sold or tested as something to swallow, and dosing by drops of a 1% solution has no margin for error. It also breaks down red blood cells in people with G6PD deficiency, which often goes undiagnosed until something triggers it. Separately: if you ever start an antidepressant, methylene blue and SSRIs together can cause serotonin syndrome. Worth a doctor's take before you add it.</li>
+      <li><strong>Nattokinase and fish oil both slow clotting.</strong> Not a problem day to day, but stop both about two weeks before any surgery, dental extraction, or procedure. If you notice easy bruising, frequent nosebleeds, or cuts that keep bleeding, drop the nattokinase first.</li>
+      <li><strong>Berberine can drop blood sugar</strong> even without diabetes in the mix. If you feel shaky or lightheaded an hour after a dose, you took it too far from food. It's also hard on the gut — many people run it 8 to 12 weeks, then take a few weeks off.</li>
+      <li><strong>Creatine will raise your creatinine on a blood test.</strong> That's the supplement showing up, not a kidney problem, but tell whoever orders the labs so nobody chases a false alarm. Drink more water than usual, especially at 20 g a day.</li>
+      <li><strong>Sea moss is a real iodine dose.</strong> Too much iodine can push a healthy thyroid in either direction. If you get fatigued, jittery, or notice neck swelling, that's the one to pull.</li>
+    </ul>
+  </div>
+
+  <div class="plain">
+    <h2>Check these against your labels</h2>
+    <ul>
+      <li><strong>Serving sizes.</strong> I read your bottles from photos. Confirm the capsules-per-serving on the magnesium, sea moss, and berberine before you settle in.</li>
+      <li><strong>Folate overlap.</strong> Between the B complex and the separate methylfolate you may be well above what you need. Worth a conversation if you weren't specifically told to take both.</li>
+      <li><strong>Vitamin D amount.</strong> If you don't know your blood level, a 25-OH vitamin D test is the cheapest way to find out whether that capsule is right, too little, or unnecessary.</li>
+    </ul>
+  </div>
+
+  <footer>This is a scheduling and organization tool, not medical advice. Bring the whole list to your doctor or pharmacist — especially if you take any prescription — since interactions are the real risk in a stack this size.</footer>
+
+</div>
+</div>
+
+<script>
+(function () {
+  var app = document.getElementById('app');
+  var rows = app.querySelectorAll('.row:not(.hold)');
+  var doneEl = app.querySelector('#done');
+  var totalEl = app.querySelector('#total');
+  totalEl.textContent = rows.length;
+
+  function tally() {
+    var n = 0;
+    rows.forEach(function (r) { if (r.getAttribute('aria-pressed') === 'true') n++; });
+    doneEl.textContent = n;
+  }
+
+  rows.forEach(function (r) {
+    r.addEventListener('click', function () {
+      r.setAttribute('aria-pressed', r.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+      tally();
+    });
+  });
+
+  app.querySelector('#reset').addEventListener('click', function () {
+    rows.forEach(function (r) { r.setAttribute('aria-pressed', 'false'); });
+    tally();
+  });
+})();
+</script>
+</body>
 </html>
